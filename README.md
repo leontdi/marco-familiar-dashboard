@@ -152,6 +152,11 @@ Además de lo que cuenta Lito ([docs/README-original-Lito.md](docs/README-origin
 
 ---
 
+## Contribuir
+
+Las correcciones e ideas son bienvenidas: mira [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir una incidencia o una
+propuesta de cambio. Los fallos de seguridad, en privado: [SECURITY.md](SECURITY.md).
+
 ## Estructura, licencia y créditos
 
 ```
