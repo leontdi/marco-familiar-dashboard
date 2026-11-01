@@ -1,5 +1,14 @@
-# Fragmento para config/configuration.yaml de Home Assistant: escuchar SOLO en 127.0.0.1.
-# Los scripts del marco y tareas_api.py hablan con HA en local; nada de HA se publica en Internet.
-http:
-  server_host: 127.0.0.1
-  server_port: 8123
+# Home Assistant debe escuchar SOLO en 127.0.0.1: los scripts del marco y tareas_api.py hablan con HA en local y nada
+# de HA se publica en Internet ni en la red de casa.
+#
+# OJO: en las versiones recientes de HA esto YA NO va en configuration.yaml. HA pasa una sola vez el bloque «http:» a
+# config/.storage/http (yaml_migration_done: true) y desde entonces lo ignora; además avisa en Ajustes → Reparaciones
+# de que dejará de admitirse en la 2027.2.0. Fija server_host en .storage/http como explica el README principal
+# («Lo que aprendimos»: «Home Assistant en Docker volvía a escuchar en 0.0.0.0») y NO dejes este bloque aquí.
+#
+# Solo para versiones antiguas de HA (sin config/.storage/http con yaml_migration_done), descomenta:
+#http:
+#  server_host: 127.0.0.1
+#  server_port: 8123
+#
+# Compruébalo siempre tras arrancar y tras cada actualización: ss -ltn | grep 8123 → 127.0.0.1:8123, nunca 0.0.0.0.

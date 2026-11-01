@@ -136,7 +136,15 @@ Además de lo que cuenta Lito ([docs/README-original-Lito.md](docs/README-origin
 - **El servicio de apagado (accesibilidad) dejaba de funcionar tras reiniciar** («Ignoring non-encryption-aware service»): `android:directBootAware="true"` y reescribir el ajuste en el script de arranque.
 - **Espejo Alexa ⇄ Bring!:** si pasas lo de Alexa a Bring! y lo borras de Alexa, «Alexa, quita…» deja de funcionar. Mejor que Alexa sea una copia exacta de Bring! y que el script recuerde qué estaba sincronizado para distinguir «nuevo» de «quitado».
 - **El historial de Alexa está lleno de bromas y errores de reconocimiento.** Para los «habituales», cuenta solo lo que se pide en días distintos y ten una lista de ignorados.
-- **Home Assistant en Docker volvía a escuchar en 0.0.0.0** tras reiniciar: fija `server_host` en `.storage/http`.
+- **Home Assistant en Docker volvía a escuchar en 0.0.0.0** (abierto a toda la red de casa) aunque `configuration.yaml` dijera `server_host: 127.0.0.1`. Las versiones recientes pasan una sola vez el bloque `http:` a `config/.storage/http` (`yaml_migration_done: true`) y desde entonces lo ignoran sin avisar; si en esa «mudanza» no había `server_host`, se queda en 0.0.0.0. Hay que fijarlo en `data.stable.server_host` de ese fichero, **con HA parado** (si no, puede pisarlo al apagarse) y con copia antes. En la carpeta de Home Assistant:
+  ```sh
+  sudo docker stop homeassistant
+  sudo cp config/.storage/http config/.storage/http.antes
+  sudo python3 -I -c "import json; p='config/.storage/http'; d=json.load(open(p)); d['data']['stable']['server_host']=['127.0.0.1','::1']; json.dump(d, open(p,'w'), indent=4)"
+  sudo docker start homeassistant
+  ss -ltn | grep 8123   # 127.0.0.1:8123 y [::1]:8123, nunca 0.0.0.0
+  ```
+  Compruébalo también desde otro equipo de la red (no debe responder) y tras cada actualización de HA. Y no dejes el bloque `http:` en `configuration.yaml`: no sirve de nada y HA avisa en Ajustes → Reparaciones de que se ignora y de que dejará de admitirse en la 2027.2.0.
 - **El toldo Somfy llega invertido** a Home Assistant: «abierto 100 %» es recogido. Invierte posición y órdenes.
 - **Alexa Media Player sirve sin Spotify Premium** (pausa, siguiente, volumen, qué suena), con 5–15 s de retraso por la nube de Amazon. En el marco, pinta el cambio al pulsar y deja que HA confirme.
 - **Los «calendarios familiares» grandes (Dragon Touch, Skylight…) suelen ser tablets Android 8.1 cerradas**, sin ADB. Para ir a más pulgadas, busca la misma plataforma que el XORO (Allwinner A133, Android 10, root de fábrica), como el LOOFII C-3 de 21,5" de la lista de Wes.

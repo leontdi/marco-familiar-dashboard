@@ -124,9 +124,11 @@ Rutas de ejemplo: `/srv/familia/marco` (scripts, configuración, secretos y esta
 
    Comprueba los calendarios con `python3 -I scripts/gcal.py check`.
 
-4. **Home Assistant**: copia `despliegue/home-assistant/compose.yaml` en `/srv/familia/homeassistant/`, añade el
-   fragmento de `configuration.example.yaml` (HA solo en 127.0.0.1) y, si quieres pasar por voz tareas de Alexa a
-   Todoist, la automatización de `automations.example.yaml`. La lista de la compra **no** necesita automatización:
+4. **Home Assistant**: copia `despliegue/home-assistant/compose.yaml` en `/srv/familia/homeassistant/`, deja HA
+   escuchando solo en 127.0.0.1 (en las versiones recientes, con `server_host` en `config/.storage/http` y **no** en
+   `configuration.yaml`: ver `configuration.example.yaml` y «Lo que aprendimos» en el README principal; compruébalo
+   con `ss -ltn | grep 8123`) y, si quieres pasar por voz tareas de Alexa a Todoist, la automatización de
+   `automations.example.yaml`. La lista de la compra **no** necesita automatización:
    la mantiene `compra_sync.py` (quita cualquier automatización antigua «Alexa → Bring!», que borraría de Alexa lo
    que pasa a Bring!).
 
