@@ -71,7 +71,21 @@
   "coche": {
     "_nota": "Prefijo de las entidades de la integración del coche en HA (sensor.<prefijo>_nivel_de_bateria, _autonomia, _cuentakilometros, _ultima_actualizacion, _presion_neumatico_<rueda>, binary_sensor.<prefijo>_cargando y _enchufe, switch.<prefijo>_charge_to_full y sensor.<prefijo>_battery_power en W, para la potencia de carga). «modelo» se publica tal cual en compra.json (coche.modelo). Pon \"coche\": null si no hay coche.",
     "modelo": "Eléctrico compacto",
-    "prefijo_sensores": "mi_coche"
+    "prefijo_sensores": "mi_coche",
+    "_nota_entidades": "Si tu integración usa otros nombres, cámbialos en «entidades» (claves: bateria, autonomia, cargando, enchufe, informado, km, cargar_100, potencia, rueda_delantero_izquierdo, rueda_delantero_derecho, rueda_trasero_izquierdo, rueda_trasero_derecho) o anúlalos con null si el coche no los tiene. Solo bateria, autonomia, cargando y enchufe son imprescindibles. «cargando» vale como binary_sensor (on) o como estado de carga (charging/starting); «cargar_100», como interruptor o como límite de carga en %; la potencia (W o kW) y las ruedas (kPa, psi o bar) se convierten según su unidad. Para Tesla Fleet, renombra «_ejemplo_entidades_tesla_fleet» a «entidades» (cuentakilómetros y ruedas vienen desactivados: actívalos en HA).",
+    "_ejemplo_entidades_tesla_fleet": {
+      "autonomia": "sensor.mi_coche_autonomia_de_la_bateria",
+      "cargando": "sensor.mi_coche_carga",
+      "enchufe": "binary_sensor.mi_coche_cable_de_carga",
+      "cargar_100": "number.mi_coche_limite_de_carga",
+      "potencia": "sensor.mi_coche_potencia_del_cargador",
+      "informado": null,
+      "km": "sensor.mi_coche_cuentakilometros",
+      "rueda_delantero_izquierdo": "sensor.mi_coche_presion_del_neumatico_delantero_izquierdo",
+      "rueda_delantero_derecho": "sensor.mi_coche_presion_del_neumatico_delantero_derecho",
+      "rueda_trasero_izquierdo": "sensor.mi_coche_presion_del_neumatico_trasero_izquierdo",
+      "rueda_trasero_derecho": "sensor.mi_coche_presion_del_neumatico_trasero_derecho"
+    }
   },
 
   "_nota_ninos": "Nombre tal cual en TaskMate y color en el marco. A los niños de TaskMate que no estén aquí se les da uno de «otros_colores».",
