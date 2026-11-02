@@ -8,8 +8,9 @@ services:
       - /etc/localtime:/etc/localtime:ro
     environment:
       TZ: Europe/Madrid
-    # Red del host sin publicar puertos: HA escucha solo en 127.0.0.1 (http.server_host en configuration.yaml)
-    # y el cortafuegos no abre el 8123
+    # Red del host sin publicar puertos: HA escucha solo en 127.0.0.1 y el cortafuegos no abre el 8123.
+    # server_host va en config/.storage/http, NO en configuration.yaml (las versiones recientes lo ignoran ahí):
+    # ver configuration.example.yaml y «Lo que aprendimos» en el README principal.
     network_mode: host
     restart: unless-stopped
     # Que no afecte a otros servicios del mismo servidor
