@@ -96,6 +96,7 @@ object FakeFamily {
             ),
             coche = real?.coche,
             casa = real?.casa,
+            seguridad = real?.seguridad,
             frecuentes = listOf(Frequent("Huevos", 6), Frequent("Yogures", 5), Frequent("Aceite de oliva", 4))
         )
     }

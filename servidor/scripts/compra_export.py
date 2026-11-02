@@ -12,6 +12,8 @@ despliegue/nginx-ejemplo.conf). Solo escribe si algo cambia. Solo lectura de HA.
 - «casa»: termostato (temperatura, consigna, modo, humedad, pila), temperatura de las estancias (p. ej. sensores de
   los Echo), toldo (sacado en %; si «invertido», HA lo da al revés) y la música que suena (o la última pausada) en un
   Echo.
+- «seguridad»: solo lectura, cerradura (estado, batería, si está crítica o cargando y, con sensor, la puerta) y alarma
+  (estado de HA: disarmed, armed_away…), de «seguridad» en la configuración. Lo que falte, null.
 - «listas»: cada lista de «listas_marco» con nombre, color y elementos; las tareas de Todoist con su fecha
   («vence»), ordenadas: primero las que tienen fecha (las más próximas antes) y luego el resto.
 
@@ -218,8 +220,42 @@ try:
 except Exception:
     pass
 
+
+def seguridad_export(cfg):
+    """Solo lectura: cerradura (estado de HA, batería, puerta) y alarma. Lo que no haya (null en la configuración, la
+    entidad aún no existe o HA no responde) queda en None; sin «seguridad» en la configuración, None entero."""
+    if not cfg:
+        return None
+
+    def leer(entidad, conv=lambda v: v):
+        if not entidad:
+            return None
+        try:
+            v = state(entidad)
+        except Exception:
+            return None
+        return None if v in ("unknown", "unavailable") else conv(v)
+
+    def on(v):
+        return v == "on"
+
+    out = {}
+    c = cfg.get("cerradura")
+    if c and c.get("entidad"):
+        out["cerradura"] = {"nombre": c.get("nombre") or "Puerta", "estado": leer(c["entidad"]),
+                            "bateria": leer(c.get("bateria"), numero), "bateria_critica": leer(c.get("bateria_critica"), on),
+                            "cargando": leer(c.get("cargando"), on),
+                            "puerta": leer(c.get("puerta"), lambda v: "abierta" if v == "on" else "cerrada")}
+    a = cfg.get("alarma")
+    if a and a.get("entidad"):
+        out["alarma"] = {"nombre": a.get("nombre") or "Alarma", "estado": leer(a["entidad"])}
+    return out or None
+
+
+seguridad = seguridad_export(CFG.get("seguridad"))
+
 data = {"items": [{"producto": i["producto"], "detalle": i["detalle"]} for i in compra], "listas": listas, "coche": coche,
-        "casa": casa, "frecuentes": frecuentes}
+        "casa": casa, "frecuentes": frecuentes, "seguridad": seguridad}
 try:
     old = json.load(open(OUT))
     if {k: old.get(k) for k in data} == data:

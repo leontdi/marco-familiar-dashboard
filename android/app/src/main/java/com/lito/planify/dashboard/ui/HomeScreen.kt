@@ -278,6 +278,7 @@ fun HomeEnergyScreen(state: UiState, actions: HomeCallbacks) {
                 BestHoursPanel(prices, now, Modifier.fillMaxWidth(), state.carCharge)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                state.shopping?.seguridad?.let { SecurityPanel(it, now, Modifier.fillMaxWidth()) }
                 casa?.clima?.let { ClimatePanel(it, casa.estancias.orEmpty(), actions, Modifier.fillMaxWidth().weight(1f), compact = true) }
                 car?.bateria?.let { CarPanel(car, Modifier.fillMaxWidth()) }
             }
