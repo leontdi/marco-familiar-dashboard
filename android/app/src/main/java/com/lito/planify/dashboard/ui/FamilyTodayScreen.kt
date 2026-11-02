@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lito.planify.dashboard.UiState
 import com.lito.planify.dashboard.data.Event
+import com.lito.planify.dashboard.data.alert
 import com.lito.planify.dashboard.ui.theme.Palette
 import com.lito.planify.dashboard.ui.theme.Type
 import java.time.DayOfWeek
@@ -83,6 +84,8 @@ fun FamilyTodayScreen(state: UiState, onOpen: (Page) -> Unit) {
             KidsTile(state, Modifier.weight(1f).fillMaxHeight()) { onOpen(Page.Tasks) }
             ShoppingTile(state, Modifier.weight(1f).fillMaxHeight()) { onOpen(Page.Tasks) }
             EnergyTile(state, Modifier.weight(1.25f).fillMaxHeight()) { onOpen(Page.Home) }
+            // Solo si pasa algo (alarma, cerradura atascada o sin cerrar de noche, batería baja)
+            state.shopping?.seguridad?.alert(now)?.let { SecurityAlertTile(it, Modifier.weight(0.8f).fillMaxHeight()) { onOpen(Page.Home) } }
         }
     }
 }

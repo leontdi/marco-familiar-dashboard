@@ -68,6 +68,12 @@
     }
   },
 
+  "seguridad": {
+    "_nota": "Opcional y SOLO LECTURA (el marco no abre ni desarma nada): la cerradura y la alarma en la pestaña Casa y, si pasa algo (alarma disparada, cerradura atascada o sin echar de noche, batería baja), un aviso en la portada. «entidad» de la cerradura: lock.* (p. ej. Nuki por MQTT con Home Assistant Discovery); «puerta»: binary_sensor del sensor de puerta, o null si no hay; «alarma.entidad»: alarm_control_panel.* (Verisure en España: integración de Securitas Direct por HACS), o null. Quita la sección entera si no tienes nada de esto.",
+    "cerradura": {"nombre": "Puerta de entrada", "entidad": "lock.puerta_entrada", "bateria": "sensor.puerta_entrada_battery", "bateria_critica": "binary_sensor.puerta_entrada_battery_critical", "cargando": "binary_sensor.puerta_entrada_battery_charging", "puerta": null},
+    "alarma": {"nombre": "Alarma", "entidad": null}
+  },
+
   "coche": {
     "_nota": "Prefijo de las entidades de la integración del coche en HA (sensor.<prefijo>_nivel_de_bateria, _autonomia, _cuentakilometros, _ultima_actualizacion, _presion_neumatico_<rueda>, binary_sensor.<prefijo>_cargando y _enchufe, switch.<prefijo>_charge_to_full y sensor.<prefijo>_battery_power en W, para la potencia de carga). «modelo» se publica tal cual en compra.json (coche.modelo). Pon \"coche\": null si no hay coche.",
     "modelo": "Eléctrico compacto",

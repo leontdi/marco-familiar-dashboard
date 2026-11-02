@@ -115,6 +115,25 @@ data class HomeStatus(
     val musica: Music? = null
 )
 
+/** Seguridad de la casa (compra.json «seguridad»), solo para mirar: el marco no abre ni desarma nada. */
+data class Security(val cerradura: DoorLock? = null, val alarma: Alarm? = null)
+
+/**
+ * Cerradura: `estado` de HA (locked, unlocked, open, jammed, locking…; null si aún no ha informado), batería en %,
+ * si está crítica o cargando y, con sensor de puerta, `puerta` «abierta» o «cerrada».
+ */
+data class DoorLock(
+    val nombre: String? = null,
+    val estado: String? = null,
+    val bateria: Double? = null,
+    val bateria_critica: Boolean? = null,
+    val cargando: Boolean? = null,
+    val puerta: String? = null
+)
+
+/** Alarma: `estado` de HA (disarmed, armed_home, armed_away, armed_night, arming, pending, triggered…). */
+data class Alarm(val nombre: String? = null, val estado: String? = null)
+
 /** Termostato (Somfy u otro, vía HA): `modo` home/away/night/freeze/none (preset de HA); `pila` en %. */
 data class Climate(
     val nombre: String? = null,
@@ -152,7 +171,9 @@ data class ShoppingList(
     val coche: CarStatus? = null,
     val casa: HomeStatus? = null,
     /** Los 3 productos más pedidos («habituales») y si ya están en la lista. */
-    val frecuentes: List<Frequent>? = null
+    val frecuentes: List<Frequent>? = null,
+    /** Cerradura y alarma, solo lectura; null si no están configuradas. */
+    val seguridad: Security? = null
 ) {
     fun all(): List<FamilyList> = listas ?: listOf(FamilyList(SHOPPING_NAME, SHOPPING_COLOR, items))
     fun shopping(): List<ShoppingItem> = all().firstOrNull { it.nombre == SHOPPING_NAME }?.items.orEmpty()
