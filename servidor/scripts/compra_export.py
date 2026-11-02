@@ -67,32 +67,86 @@ def state(entity):
     return json.load(urllib.request.urlopen(req, timeout=20))["state"]
 
 
-coche = None
-try:
-    car_cfg = CFG.get("coche") or {}
-    # Prefijo de las entidades de la integración del coche: sensor.<prefijo>_nivel_de_bateria, etc.
-    car = car_cfg["prefijo_sensores"]
-    num = lambda e: (lambda v: float(v) if v not in ("unknown", "unavailable", "") else None)(state(e))
-    coche = {"modelo": car_cfg.get("modelo") or "",
-             "bateria": num(f"sensor.{car}_nivel_de_bateria"), "autonomia_km": num(f"sensor.{car}_autonomia"),
-             "cargando": state(f"binary_sensor.{car}_cargando") == "on", "enchufado": state(f"binary_sensor.{car}_enchufe") == "on",
-             "informado": state(f"sensor.{car}_ultima_actualizacion")}
-    try:
-        coche["km"] = num(f"sensor.{car}_cuentakilometros")
-        coche["ruedas_bar"] = [round(num(f"sensor.{car}_presion_neumatico_{r}") / 100, 1) for r in
-                               ("delantero_izquierdo", "delantero_derecho", "trasero_izquierdo", "trasero_derecho")]
-        coche["cargar_100"] = state(f"switch.{car}_charge_to_full") == "on"
-        potencia = num(f"sensor.{car}_battery_power")  # W; 0 cuando la carga está en pausa
-        coche["potencia_kw"] = round(abs(potencia) / 1000, 1) if potencia and abs(potencia) >= 100 else None
-    except Exception:
-        pass
-except Exception:
-    coche = None  # sin coche, el resto del fichero sigue igual
-
-
 def full(entity):
     req = urllib.request.Request(f"{HA}/api/states/{entity}", headers={"Authorization": f"Bearer {TOKEN}"})
     return json.load(urllib.request.urlopen(req, timeout=20))
+
+
+RUEDAS =("delantero_izquierdo", "delantero_derecho", "trasero_izquierdo", "trasero_derecho")
+
+
+def entidades_coche(car_cfg):
+    """Entidades del coche en HA. Por defecto, las de la integración original (sensor.<prefijo>_nivel_de_bateria…);
+    «coche.entidades» cambia cualquiera (p. ej. con Tesla Fleet) o la anula con null si el coche no la tiene."""
+    car = car_cfg["prefijo_sensores"]
+    ent = {"bateria": f"sensor.{car}_nivel_de_bateria", "autonomia": f"sensor.{car}_autonomia",
+           "cargando": f"binary_sensor.{car}_cargando", "enchufe": f"binary_sensor.{car}_enchufe",
+           "informado": f"sensor.{car}_ultima_actualizacion", "km": f"sensor.{car}_cuentakilometros",
+           "cargar_100": f"switch.{car}_charge_to_full", "potencia": f"sensor.{car}_battery_power",
+           **{f"rueda_{r}": f"sensor.{car}_presion_neumatico_{r}" for r in RUEDAS}}
+    ent.update({k: v for k, v in (car_cfg.get("entidades") or {}).items() if not k.startswith("_")})
+    return ent
+
+
+def numero(v):
+    return float(v) if v not in (None, "unknown", "unavailable", "") else None
+
+
+# Presión de las ruedas a bar según la unidad de HA: kPa (integración original), psi (Tesla Fleet) o bar
+A_BAR = {"kpa": 0.01, "psi": 0.0689476, "bar": 1.0}
+
+
+def presion_bar(s):
+    v = numero(s["state"])
+    factor = A_BAR.get(str(s["attributes"].get("unit_of_measurement") or "kPa").lower(), 0.01)
+    return round(v * factor, 1)
+
+
+coche = None
+try:
+    car_cfg = CFG.get("coche") or {}
+    ent = entidades_coche(car_cfg)
+    num = lambda k: numero(state(ent[k]))
+    # Imprescindibles: batería, autonomía, cargando y enchufe. «cargando» vale como binary_sensor («on») o como sensor
+    # del estado de carga («charging»/«starting», Tesla Fleet).
+    coche = {"modelo": car_cfg.get("modelo") or "",
+             "bateria": num("bateria"), "autonomia_km": num("autonomia"),
+             "cargando": state(ent["cargando"]) in ("on", "charging", "starting"),
+             "enchufado": state(ent["enchufe"]) == "on", "informado": None}
+    # El resto, cada uno por su lado: lo que el coche no tenga (null en «entidades» o error) no tumba lo demás.
+    if ent.get("informado"):
+        try:
+            coche["informado"] = state(ent["informado"])
+        except Exception:
+            pass
+    if ent.get("km"):
+        try:
+            coche["km"] = num("km")
+        except Exception:
+            pass
+    try:
+        if all(ent.get(f"rueda_{r}") for r in RUEDAS):
+            coche["ruedas_bar"] = [presion_bar(full(ent[f"rueda_{r}"])) for r in RUEDAS]
+    except Exception:
+        pass
+    if ent.get("cargar_100"):
+        try:
+            # Un interruptor («on») o un límite de carga en % (number de Tesla Fleet): al 100 % = cargar hasta el final
+            v = state(ent["cargar_100"])
+            coche["cargar_100"] = v == "on" or (numero(v) or 0) >= 100
+        except Exception:
+            pass
+    if ent.get("potencia"):
+        try:
+            p = full(ent["potencia"])
+            potencia = numero(p["state"])  # 0 cuando la carga está en pausa
+            if potencia is not None and p["attributes"].get("unit_of_measurement") == "kW":
+                potencia *= 1000  # Tesla Fleet da kW; la integración original, W
+            coche["potencia_kw"] = round(abs(potencia) / 1000, 1) if potencia and abs(potencia) >= 100 else None
+        except Exception:
+            pass
+except Exception:
+    coche = None  # sin coche, el resto del fichero sigue igual
 
 
 def num_or_none(v):
