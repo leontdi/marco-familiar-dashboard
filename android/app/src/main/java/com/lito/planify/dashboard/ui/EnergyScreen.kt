@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lito.planify.dashboard.UiState
 import com.lito.planify.dashboard.data.CarStatus
+import com.lito.planify.dashboard.data.ChargeHours
 import com.lito.planify.dashboard.data.HourPrice
 import com.lito.planify.dashboard.ui.theme.Palette
 import com.lito.planify.dashboard.ui.theme.Type
@@ -60,7 +61,7 @@ fun EnergyScreen(state: UiState) {
                 )
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                BestHoursPanel(prices, now, Modifier.fillMaxWidth())
+                BestHoursPanel(prices, now, Modifier.fillMaxWidth(), state.carCharge)
                 car?.bateria?.let { CarPanel(car, Modifier.fillMaxWidth().weight(1f)) }
             }
         }
@@ -149,24 +150,31 @@ internal fun priceWindow(prices: List<HourPrice>, now: LocalDateTime): List<Hour
 /**
  * El tramo de [hours] horas seguidas más barato desde esta hora (hoy o mañana). Solo si es barato de verdad, por debajo
  * de la media de su día: por la noche, sin el precio de mañana, lo que queda de hoy suele ser caro y no se recomienda.
+ * Con [allowed] (horario de carga del coche), solo tramos enteros dentro de él y sin mirar la media: no hay otras horas.
  */
-private fun cheapestWindow(prices: List<HourPrice>, now: LocalDateTime, hours: Int, until: LocalDateTime): Triple<LocalDateTime, LocalDateTime, Double>? {
+internal fun cheapestWindow(
+    prices: List<HourPrice>, now: LocalDateTime, hours: Int, until: LocalDateTime, allowed: ChargeHours? = null
+): Triple<LocalDateTime, LocalDateTime, Double>? {
     val from = now.withMinute(0).withSecond(0).withNano(0)
     val average = prices.groupBy { it.time.toLocalDate() }.mapValues { (_, d) -> d.map { it.eur_kwh }.average() }
-    val list = prices.filter { !it.time.isBefore(from) && it.time.isBefore(until) }.sortedBy { it.time }
+    val list = prices.filter { !it.time.isBefore(from) && it.time.isBefore(until) && (allowed == null || allowed.allows(it.time)) }
+        .sortedBy { it.time }
     return list.windowed(hours)
         .filter { w -> w.zipWithNext().all { (a, b) -> a.time.plusHours(1) == b.time } }
         .minByOrNull { w -> w.sumOf { it.eur_kwh } }
         ?.let { w -> Triple(w.first().time, w.last().time.plusHours(1), w.sumOf { it.eur_kwh } / hours) }
-        ?.takeIf { (start, _, avg) -> avg <= (average[start.toLocalDate()] ?: Double.MAX_VALUE) }
+        ?.takeIf { (start, _, avg) -> allowed != null || avg <= (average[start.toLocalDate()] ?: Double.MAX_VALUE) }
 }
 
-/** «Mejores horas»: cargar el coche (4 h), lavavajillas o lavadora (2 h) y el tramo caro que conviene evitar hoy. */
+/**
+ * «Mejores horas»: cargar el coche (4 h, dentro de [chargeHours] si lo hay), lavavajillas o lavadora (2 h) y el tramo
+ * caro que conviene evitar hoy.
+ */
 @Composable
-internal fun BestHoursPanel(prices: List<HourPrice>, now: LocalDateTime, modifier: Modifier) {
+internal fun BestHoursPanel(prices: List<HourPrice>, now: LocalDateTime, modifier: Modifier, chargeHours: ChargeHours? = null) {
     val until = now.toLocalDate().plusDays(2).atStartOfDay()
     val todayEnd = now.toLocalDate().plusDays(1).atStartOfDay()
-    val car = cheapestWindow(prices, now, 4, until)
+    val car = cheapestWindow(prices, now, 4, until, chargeHours)
     val wash = cheapestWindow(prices, now, 2, until)
     val avoid = prices.filter { !it.time.isBefore(now.withMinute(0)) && it.time.isBefore(todayEnd) }
         .sortedBy { it.time }.windowed(3).maxByOrNull { w -> w.sumOf { it.eur_kwh } }
@@ -176,8 +184,21 @@ internal fun BestHoursPanel(prices: List<HourPrice>, now: LocalDateTime, modifie
         Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (prices.isEmpty()) Text("Sin precios todavía", style = Type.Body.copy(color = Palette.InkMuted))
             car?.let { BestRow("🚗", "Cargar el coche", it, now) }
+            if (car == null && chargeHours != null && prices.isNotEmpty()) {
+                // Con horario de carga no se recomienda otra hora: se dice cuál es y que falta su precio
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🚗", style = Type.Large, modifier = Modifier.width(60.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Cargar el coche · ${chargeHours.label()}", style = Type.Small.copy(color = Palette.InkSoft))
+                        Text(
+                            if (tomorrowKnown) "Sin 4 h seguidas en tu horario" else "Falta el precio de tu horario (REE, ≈20:30)",
+                            style = Type.Body.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            }
             wash?.let { BestRow("🍽️", "Lavavajillas o lavadora", it, now) }
-            if ((car == null || wash == null) && prices.isNotEmpty() && !tomorrowKnown) {
+            if (((car == null && chargeHours == null) || wash == null) && prices.isNotEmpty() && !tomorrowKnown) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("⏳", style = Type.Large, modifier = Modifier.width(60.dp))
                     Text("Lo que queda de hoy es caro: mejor esperar al precio de mañana (REE, ≈20:30)", style = Type.Small.copy(color = Palette.InkSoft))

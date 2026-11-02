@@ -85,7 +85,9 @@
       "rueda_delantero_derecho": "sensor.mi_coche_presion_del_neumatico_delantero_derecho",
       "rueda_trasero_izquierdo": "sensor.mi_coche_presion_del_neumatico_trasero_izquierdo",
       "rueda_trasero_derecho": "sensor.mi_coche_presion_del_neumatico_trasero_derecho"
-    }
+    },
+    "_nota_horas_carga": "Opcional: horas en que se puede cargar el coche (p. ej. por la potencia contratada), «desde-hasta» en horas (0-8 = de 0:00 a 8:00; 0-24 = todo el día). «Mejores horas» del marco solo recomienda cargar dentro de ellas; sin «horas_carga», a cualquier hora. Para usarlo, renombra «_ejemplo_horas_carga» a «horas_carga» y vuelve a generar dashboard.properties.",
+    "_ejemplo_horas_carga": {"laborables": "0-8", "fin_de_semana": "0-24"}
   },
 
   "_nota_ninos": "Nombre tal cual en TaskMate y color en el marco. A los niños de TaskMate que no estén aquí se les da uno de «otros_colores».",

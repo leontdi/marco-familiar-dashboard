@@ -49,6 +49,9 @@ class IcsConfig(private val props: Properties) {
     val choresUrl: String? = props.getProperty("tareas.url")?.trim()?.ifEmpty { null }
     val choresToken: String? = props.getProperty("tareas.token")?.trim()?.ifEmpty { null }
 
+    /** Horario en que se puede cargar el coche (`car.charge.*`); null: a cualquier hora. */
+    val carCharge: com.lito.planify.dashboard.data.ChargeHours? = com.lito.planify.dashboard.data.ChargeHours.from(props)
+
     /** Modo demostración (capturas para compartir): solo si hay líneas `demo.replace.N`; en el marco, null. */
     val demo: com.lito.planify.dashboard.data.Demo? = com.lito.planify.dashboard.data.Demo.from(props)
 

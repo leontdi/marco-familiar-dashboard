@@ -275,7 +275,7 @@ fun HomeEnergyScreen(state: UiState, actions: HomeCallbacks) {
                 // Con el precio de mañana publicado (≈20:30), las próximas 24 h; si no, el día de hoy
                 val tomorrowKnown = prices.any { it.time.toLocalDate() == now.toLocalDate().plusDays(1) }
                 PricePanel(if (tomorrowKnown) "Luz · próximas 24 h" else "Luz hoy", priceWindow(prices, now), now, Modifier.fillMaxWidth().weight(1f), big = true)
-                BestHoursPanel(prices, now, Modifier.fillMaxWidth())
+                BestHoursPanel(prices, now, Modifier.fillMaxWidth(), state.carCharge)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 casa?.clima?.let { ClimatePanel(it, casa.estancias.orEmpty(), actions, Modifier.fillMaxWidth().weight(1f), compact = true) }

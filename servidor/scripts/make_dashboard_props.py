@@ -40,6 +40,11 @@ for key, (name, color, role) in CALENDARS.items():
               f"calendar.{key}.role={role}", f"calendar.{key}.url={p[key + '.ics']}", ""]
 if compra:
     lines += ["# Lista de la compra y casa (Bring!, Todoist, coche… vía Home Assistant), ruta secreta", f"compra.url={compra}", ""]
+carga = (cfg.get("coche") or {}).get("horas_carga") or {}
+carga = {k: carga[c] for c, k in (("laborables", "weekdays"), ("fin_de_semana", "weekend")) if carga.get(c)}
+if carga:
+    lines += ["# Horas en que se puede cargar el coche: «Mejores horas» solo recomienda cargar ahí",
+              *(f"car.charge.{k}={v}" for k, v in carga.items()), ""]
 if tareas and p.get("tareas.token"):
     lines += ["# Tareas de los niños (TaskMate vía familia-tareas en el servidor), ruta secreta + token del marco",
               f"tareas.url={tareas}", f"tareas.token={p['tareas.token']}", ""]
