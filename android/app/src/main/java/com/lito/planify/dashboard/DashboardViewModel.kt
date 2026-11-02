@@ -60,6 +60,8 @@ data class UiState(
     val shopping: ShoppingList? = null,
     /** Tareas de los niños (TaskMate); null si no están configuradas. */
     val chores: Chores? = null,
+    /** Horario en que se puede cargar el coche: «Mejores horas» solo recomienda ahí; null, a cualquier hora. */
+    val carCharge: com.lito.planify.dashboard.data.ChargeHours? = null,
     /** Tarea (o hecha, al deshacer) que se está enviando: su botón espera y no se puede volver a pulsar. */
     val choreBusy: String? = null,
     /** Por qué falló lo último que se envió de tareas o recompensas («PIN incorrecto»…); null si fue bien. */
@@ -126,6 +128,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 energy = energyRepository?.energy?.value?.value,
                 shopping = shoppingRepository?.let { it.list.value?.value ?: ShoppingList() },
                 chores = choresRepository?.let { it.chores.value?.value ?: Chores() },
+                carCharge = icsConfig.carCharge,
                 weeks = calendarRepository.weeks.value,
                 location = store.location,
                 schedule = store.schedule,
